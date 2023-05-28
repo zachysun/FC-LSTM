@@ -9,8 +9,8 @@ import torch.nn as nn
 
 class FC_LSTM(nn.Module):
     """
-    - Params: input_size(c*n), hidden_size
-    - Input: x(b, t, c*n)
+    - Params: input_size, hidden_size
+    - Input: x(b, t, f)
     - Output: hiddens(length: 1+t), memorys(length: 1+t)
     """
 
