@@ -22,9 +22,9 @@ class FC_LSTM(nn.Module):
 
         self.fc_x = nn.Linear(input_size, 4 * hidden_size)
         self.fc_h = nn.Linear(hidden_size, 4 * hidden_size)
-        self.W_ci = nn.Linear(hidden_size, hidden_size)
-        self.W_cf = nn.Linear(hidden_size, hidden_size)
-        self.W_co = nn.Linear(hidden_size, hidden_size)
+        self.W_ci = nn.Parameter(torch.FloatTensor(hidden_size))
+        self.W_cf = nn.Parameter(torch.FloatTensor(hidden_size))
+        self.W_co = nn.Parameter(torch.FloatTensor(hidden_size))
 
     def forward(self, x):
         batch_size, seq_len, input_size = x.size()
@@ -43,17 +43,17 @@ class FC_LSTM(nn.Module):
             y = x_t_w + h_t_w
             i, f, o, g = torch.split(y, self.hidden_size, dim=1)
 
-            Ci = self.W_ci(memorys[t])
-            Cf = self.W_cf(memorys[t])
+            Ci = torch.mul(self.W_ci, memorys[t])
+            Cf = torch.mul(self.W_cf, memorys[t])
 
             i = torch.sigmoid(i + Ci)
             f = torch.sigmoid(f + Cf)
             g = torch.tanh(g)
 
-            memory = f * memorys[t] + i * g
-            Co = self.W_co(memory)
+            memory = torch.mul(f, memorys[t]) + torch.mul(i, g)
+            Co = torch.mul(self.W_co, memory)
             o = torch.sigmoid(o + Co)
-            hidden = o * torch.tanh(memory)
+            hidden = torch.mul(o, torch.tanh(memory))
 
             hiddens.append(hidden)
             memorys.append(memory)
