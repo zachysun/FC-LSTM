@@ -11,12 +11,11 @@ class FC_LSTM(nn.Module):
     """
     - Params: input_size, hidden_size
     - Input: x(b, t, f)
-    - Output: hiddens(length: 1+t), memorys(length: 1+t)
+    - Output: hiddens(length: t), memorys(length: t)
     """
 
     def __init__(self, input_size, hidden_size):
         super(FC_LSTM, self).__init__()
-
         self.input_size = input_size
         self.hidden_size = hidden_size
 
@@ -26,12 +25,10 @@ class FC_LSTM(nn.Module):
         self.W_cf = nn.Parameter(torch.FloatTensor(hidden_size))
         self.W_co = nn.Parameter(torch.FloatTensor(hidden_size))
 
-    def forward(self, x):
+    def forward(self, x, init_hidden, init_memory):
         batch_size, seq_len, input_size = x.size()
         hiddens = []
         memorys = []
-        init_hidden = torch.zeros(batch_size, self.hidden_size).cuda()
-        init_memory = torch.zeros(batch_size, self.hidden_size).cuda()
         hiddens.append(init_hidden)
         memorys.append(init_memory)
 
@@ -58,7 +55,10 @@ class FC_LSTM(nn.Module):
             hiddens.append(hidden)
             memorys.append(memory)
 
-        return hiddens, memorys
+        hiddens = torch.stack(hiddens, dim=0)
+        memorys = torch.stack(memorys, dim=0)
+
+        return hiddens[1:], memorys[1:]
 
 
 if __name__ == '__main__':
@@ -69,9 +69,12 @@ if __name__ == '__main__':
     print('FC-LSTM Layer usage:')
     b, t, f = inputs.shape
     hidden_size = 64
+    init_hidden = torch.zeros(b, hidden_size).to(device)
+    init_memory = torch.zeros(b, hidden_size).to(device)
     fc_lstm = FC_LSTM(f, hidden_size)
     fc_lstm.to(device)
-    x_fc_lstm, memorys = fc_lstm(inputs)
+    x_fc_lstm, memorys = fc_lstm(inputs, init_hidden, init_memory)
     print('Length of hidden states', len(x_fc_lstm))
     print('Length of memorys', len(memorys))
-    print('Output shape of FC-LSTM Layer(final hidden states):', x_fc_lstm[t-1].shape)
+    print('Shape of output:', x_fc_lstm.shape)
+    print('Shape of all memorys:', memorys.shape)
